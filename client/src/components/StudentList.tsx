@@ -74,19 +74,19 @@ const StudentList: React.FC = () => {
         );
     });
 
-    // Non-admin users can only add one student. Disable button if they already have one.
+
     const canAddStudent = isAdmin || students.length === 0;
 
     return (
         <div style={styles.page}>
-            {/* Toast */}
+            
             {toast && (
                 <div style={{ ...styles.toast, ...(toast.type === 'error' ? styles.toastError : styles.toastSuccess) }}>
                     {toast.type === 'success' ? '✅' : '❌'} {toast.message}
                 </div>
             )}
 
-            {/* Header */}
+            
             <div style={styles.header}>
                 <div style={styles.headerLeft}>
                     <span style={styles.logo}>🎓</span>
@@ -101,7 +101,7 @@ const StudentList: React.FC = () => {
                 <button style={styles.logoutBtn} onClick={logout}>Logout</button>
             </div>
 
-            {/* Toolbar */}
+            
             <div style={styles.toolbar}>
                 <input
                     type="text"
@@ -121,7 +121,7 @@ const StudentList: React.FC = () => {
                 )}
             </div>
 
-            {/* Stats */}
+            
             <div style={styles.stats}>
                 <div style={styles.statCard}>
                     <span style={styles.statNum}>{students.length}</span>
@@ -137,7 +137,7 @@ const StudentList: React.FC = () => {
                 </div>
             </div>
 
-            {/* Table */}
+            
             {loading ? (
                 <div style={styles.emptyState}>Loading students...</div>
             ) : filteredStudents.length === 0 ? (
@@ -179,7 +179,7 @@ const StudentList: React.FC = () => {
                 </div>
             )}
 
-            {/* Student Form Modal */}
+            
             {showForm && (
                 <StudentForm
                     editData={editTarget}
@@ -188,7 +188,7 @@ const StudentList: React.FC = () => {
                 />
             )}
 
-            {/* Confirm Delete Modal */}
+            
             {deleteId && (
                 <div style={styles.overlay}>
                     <div style={styles.confirmModal}>
