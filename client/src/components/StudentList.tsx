@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { type StudentRecord, type StudentFormData } from '../types';
-import { decryptStudentFields } from '../utils/crypto';
+// server returns plaintext fields directly — no client-side decryption needed
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import StudentForm from './StudentForm';
@@ -24,14 +24,15 @@ const StudentList: React.FC = () => {
         setLoading(true);
         try {
             const res = await api.get('/students');
-            const decrypted: StudentRecord[] = (res.data as any[]).map((s) => ({
+            // Server decrypts all fields before responding — map plaintext directly
+            const students: StudentRecord[] = (res.data as any[]).map((s) => ({
                 id: s.id,
                 encryptedFields: s.encryptedFields,
                 createdAt: s.createdAt,
                 updatedAt: s.updatedAt,
-                data: decryptStudentFields<StudentFormData>(s.encryptedFields),
+                data: s.encryptedFields as StudentFormData,
             }));
-            setStudents(decrypted);
+            setStudents(students);
         } catch {
             showToast('Failed to load students', 'error');
         } finally {

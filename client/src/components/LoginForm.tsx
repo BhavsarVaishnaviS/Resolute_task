@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { encryptLevel1 } from '../utils/crypto';
 
 interface LoginFormProps {
     onSwitchToSignup: () => void;
@@ -15,23 +16,26 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
     const [loading, setLoading] = useState(false);
 
     const validate = (): boolean => {
-        const newErrors: { email?: string; password?: string } = {};
-        if (!email) newErrors.email = 'Email is required';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email format';
-        if (!password) newErrors.password = 'Password is required';
-        else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        const e: { email?: string; password?: string } = {};
+        if (!email) e.email = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Invalid email format';
+        if (!password) e.password = 'Password is required';
+        else if (password.length < 6) e.password = 'Password must be at least 6 characters';
+        setErrors(e);
+        return Object.keys(e).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setServerError('');
         if (!validate()) return;
-
         setLoading(true);
         try {
-            const res = await axios.post('/api/auth/login', { email, password });
+            // Level-1: encrypt password before transmission
+            const res = await axios.post('/api/auth/login', {
+                email,
+                password: encryptLevel1(password),
+            });
             login(res.data.email, res.data.token);
         } catch (err: any) {
             setServerError(err.response?.data?.message || 'Login failed');
@@ -82,9 +86,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
 
                     <p style={styles.switchText}>
                         Don't have an account?{' '}
-                        <span style={styles.link} onClick={onSwitchToSignup}>
-                            Create one
-                        </span>
+                        <span style={styles.link} onClick={onSwitchToSignup}>Create one</span>
                     </p>
                 </form>
             </div>
@@ -94,20 +96,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignup }) => {
 
 const styles: Record<string, React.CSSProperties> = {
     container: {
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         padding: '20px',
     },
     card: {
-        background: '#fff',
-        borderRadius: '16px',
-        padding: '40px',
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        background: '#fff', borderRadius: '16px', padding: '40px',
+        width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
     },
     header: { textAlign: 'center', marginBottom: '32px' },
     icon: { fontSize: '48px', marginBottom: '12px' },
@@ -117,32 +113,21 @@ const styles: Record<string, React.CSSProperties> = {
     field: { display: 'flex', flexDirection: 'column', gap: '6px' },
     label: { fontSize: '14px', fontWeight: 600, color: '#374151' },
     input: {
-        padding: '12px 16px',
-        border: '1.5px solid #e5e7eb',
-        borderRadius: '8px',
-        fontSize: '14px',
-        outline: 'none',
+        padding: '12px 16px', border: '1.5px solid #e5e7eb',
+        borderRadius: '8px', fontSize: '14px', outline: 'none',
         transition: 'border-color 0.2s',
     },
     inputError: { borderColor: '#ef4444' },
     errorText: { fontSize: '12px', color: '#ef4444' },
     errorBanner: {
-        background: '#fef2f2',
-        border: '1px solid #fecaca',
-        color: '#dc2626',
-        padding: '12px',
-        borderRadius: '8px',
-        fontSize: '14px',
+        background: '#fef2f2', border: '1px solid #fecaca',
+        color: '#dc2626', padding: '12px', borderRadius: '8px', fontSize: '14px',
     },
     button: {
         padding: '14px',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '15px',
-        fontWeight: 600,
-        cursor: 'pointer',
+        color: '#fff', border: 'none', borderRadius: '8px',
+        fontSize: '15px', fontWeight: 600, cursor: 'pointer',
         transition: 'opacity 0.2s',
     },
     switchText: { textAlign: 'center', fontSize: '14px', color: '#6b7280', margin: 0 },

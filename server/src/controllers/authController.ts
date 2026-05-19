@@ -1,13 +1,31 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { decryptLevel1 } from '../utils/crypto';
+
+/** Safely decrypt a Level-1 encrypted value; returns null on failure. */
+function decryptPassword(encryptedPassword: string): string | null {
+  try {
+    const plain = decryptLevel1(encryptedPassword);
+    return plain || null;
+  } catch {
+    return null;
+  }
+}
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password: encryptedPassword } = req.body;
 
-    if (!email || !password) {
+    if (!email || !encryptedPassword) {
       res.status(400).json({ message: 'Email and password are required' });
+      return;
+    }
+
+    // Decrypt Level-1 before bcrypt comparison
+    const password = decryptPassword(encryptedPassword);
+    if (!password) {
+      res.status(400).json({ message: 'Invalid request format' });
       return;
     }
 
@@ -38,16 +56,24 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password: encryptedPassword } = req.body;
 
-    if (!email || !password) {
+    if (!email || !encryptedPassword) {
       res.status(400).json({ message: 'Email and password are required' });
       return;
     }
 
+    // ── Duplicate email check FIRST — before any crypto work ──────────────
     const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
       res.status(409).json({ message: 'User already exists' });
+      return;
+    }
+
+    // Decrypt Level-1 before bcrypt hashing
+    const password = decryptPassword(encryptedPassword);
+    if (!password) {
+      res.status(400).json({ message: 'Invalid request format' });
       return;
     }
 

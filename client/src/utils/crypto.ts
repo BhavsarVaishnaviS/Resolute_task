@@ -1,15 +1,23 @@
 import CryptoJS from 'crypto-js';
 
-const FRONTEND_SECRET = import.meta.env.VITE_ENCRYPTION_KEY;
+const FRONTEND_SECRET = import.meta.env.VITE_ENCRYPTION_KEY as string;
 
-export const encryptLevel1 = (data: string): string => {
-  return CryptoJS.AES.encrypt(data, FRONTEND_SECRET).toString();
-};
+if (!FRONTEND_SECRET) {
+  console.warn(
+    '[crypto] WARNING: VITE_ENCRYPTION_KEY is not set. ' +
+    'Encryption will fail at runtime. Set it in your .env file.'
+  );
+}
+
+
+export const encryptLevel1 = (data: string): string =>
+  CryptoJS.AES.encrypt(data, FRONTEND_SECRET).toString();
 
 export const decryptLevel1 = (encryptedData: string): string => {
   const bytes = CryptoJS.AES.decrypt(encryptedData, FRONTEND_SECRET);
   return bytes.toString(CryptoJS.enc.Utf8);
 };
+
 
 export const encryptStudentFields = <T extends Record<string, unknown>>(
   studentData: T
@@ -22,6 +30,7 @@ export const encryptStudentFields = <T extends Record<string, unknown>>(
   return encrypted;
 };
 
+
 export const decryptStudentFields = <T>(encryptedFields: Record<string, string>): T => {
   const decrypted: Record<string, string> = {};
   for (const key of Object.keys(encryptedFields)) {
@@ -30,6 +39,6 @@ export const decryptStudentFields = <T>(encryptedFields: Record<string, string>)
   return decrypted as unknown as T;
 };
 
-export const hashEmailForIndex = (email: string): string => {
-  return CryptoJS.SHA256(email.toLowerCase().trim()).toString();
-};
+
+export const hashEmailForIndex = (email: string): string =>
+  CryptoJS.SHA256(email.toLowerCase().trim()).toString();

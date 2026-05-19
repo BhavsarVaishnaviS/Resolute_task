@@ -9,7 +9,6 @@ import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// All student routes protected by JWT
 router.post('/register', authMiddleware, registerStudent);
 router.get('/students', authMiddleware, getAllStudents);
 router.put('/student/:id', authMiddleware, updateStudent);

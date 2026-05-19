@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { encryptLevel1 } from '../utils/crypto';
 
 interface SignupFormProps {
     onSwitchToLogin: () => void;
@@ -29,13 +30,23 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setServerError('');
+        setErrors({});
         if (!validate()) return;
         setLoading(true);
         try {
-            const res = await axios.post('/api/auth/signup', { email, password });
+            // Level-1: encrypt password before transmission
+            const res = await axios.post('/api/auth/signup', {
+                email,
+                password: encryptLevel1(password),
+            });
             login(res.data.email, res.data.token);
         } catch (err: any) {
-            setServerError(err.response?.data?.message || 'Signup failed');
+            // 409 = duplicate email — surface on the email field directly
+            if (err.response?.status === 409) {
+                setErrors({ email: 'This email is already registered' });
+            } else {
+                setServerError(err.response?.data?.message || 'Signup failed');
+            }
         } finally {
             setLoading(false);
         }
@@ -63,7 +74,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
                             <input
                                 type={type}
                                 value={value}
-                                onChange={(e) => setter(e.target.value)}
+                                onChange={(ev) => setter(ev.target.value)}
                                 style={{ ...styles.input, ...(errors[key] ? styles.inputError : {}) }}
                                 placeholder={placeholder}
                             />
@@ -77,9 +88,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
 
                     <p style={styles.switchText}>
                         Already have an account?{' '}
-                        <span style={styles.link} onClick={onSwitchToLogin}>
-                            Sign in
-                        </span>
+                        <span style={styles.link} onClick={onSwitchToLogin}>Sign in</span>
                     </p>
                 </form>
             </div>
@@ -89,20 +98,14 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
 
 const styles: Record<string, React.CSSProperties> = {
     container: {
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         padding: '20px',
     },
     card: {
-        background: '#fff',
-        borderRadius: '16px',
-        padding: '40px',
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        background: '#fff', borderRadius: '16px', padding: '40px',
+        width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
     },
     header: { textAlign: 'center', marginBottom: '32px' },
     icon: { fontSize: '48px', marginBottom: '12px' },
@@ -112,31 +115,20 @@ const styles: Record<string, React.CSSProperties> = {
     field: { display: 'flex', flexDirection: 'column', gap: '6px' },
     label: { fontSize: '14px', fontWeight: 600, color: '#374151' },
     input: {
-        padding: '12px 16px',
-        border: '1.5px solid #e5e7eb',
-        borderRadius: '8px',
-        fontSize: '14px',
-        outline: 'none',
+        padding: '12px 16px', border: '1.5px solid #e5e7eb',
+        borderRadius: '8px', fontSize: '14px', outline: 'none',
     },
     inputError: { borderColor: '#ef4444' },
     errorText: { fontSize: '12px', color: '#ef4444' },
     errorBanner: {
-        background: '#fef2f2',
-        border: '1px solid #fecaca',
-        color: '#dc2626',
-        padding: '12px',
-        borderRadius: '8px',
-        fontSize: '14px',
+        background: '#fef2f2', border: '1px solid #fecaca',
+        color: '#dc2626', padding: '12px', borderRadius: '8px', fontSize: '14px',
     },
     button: {
         padding: '14px',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '15px',
-        fontWeight: 600,
-        cursor: 'pointer',
+        color: '#fff', border: 'none', borderRadius: '8px',
+        fontSize: '15px', fontWeight: 600, cursor: 'pointer',
     },
     switchText: { textAlign: 'center', fontSize: '14px', color: '#6b7280', margin: 0 },
     link: { color: '#667eea', cursor: 'pointer', fontWeight: 600 },
